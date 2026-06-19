@@ -106,7 +106,7 @@ def secondDegree(coeff0, coeff1, coeff2):
     return roots
 
 
-def findRoots(coeffs, eps, a, b):
+def findRoots(coeffs, a, b, eps):
     polyDegree = len(coeffs) - 1
 
     if polyDegree <= 0:
@@ -119,8 +119,10 @@ def findRoots(coeffs, eps, a, b):
         return secondDegree(coeffs[0], coeffs[1], coeffs[2])
 
     chain = [coeffs]
-    while len(chain[-1]) - 1 > 2:
-        chain.append(derivativeCoefficients(chain[-1]))
+    current = coeffs
+    while len(current) > 3:
+        current = derivativeCoefficients(current)
+        chain.append(current)
 
     lowest = chain[-1]
     roots = secondDegree(lowest[0], lowest[1], lowest[2])
@@ -131,7 +133,8 @@ def findRoots(coeffs, eps, a, b):
 
         roots = []
         for i in range(len(splitPoints) - 1):
-            lo, hi = splitPoints[i], splitPoints[i + 1]
+            lo = splitPoints[i]
+            hi = splitPoints[i + 1]
 
             finiteBracket = safeBracket(poly, lo, hi)
             if finiteBracket[0] is None:
@@ -146,7 +149,7 @@ def findRoots(coeffs, eps, a, b):
                 if root is None:
                     root = bisection(poly, lo, hi, eps)
 
-                if root is not None and np.isfinite(root) and a <= root <= b:
+                if np.isfinite(root) and a <= root <= b:
                     roots.append(root)
 
     return roots
@@ -154,13 +157,14 @@ def findRoots(coeffs, eps, a, b):
 
 def scanPage(coeffs, eps):
     reversedCoeffs = list(reversed(coeffs))
-    innerRoots = findRoots(coeffs, eps, -1.0, 1.0)
-    outerRootsBounds = findRoots(reversedCoeffs, eps, -1.0, 1.0)
+    innerRoots = findRoots(coeffs, -1.0, 1.0, eps)
+    outerRootsBounds = findRoots(reversedCoeffs, -1.0, 1.0, eps)
 
     outerRoots = []
     for y in outerRootsBounds:
         if abs(y) > 1e-12:
-            outerRoots.append(1.0 / y)
+            x = 1.0 / y
+            outerRoots.append(x)
 
     allRoots = innerRoots + outerRoots
     roundedRoots = []
