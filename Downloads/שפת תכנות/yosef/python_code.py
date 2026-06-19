@@ -175,7 +175,7 @@ def loadCoeffs(path):
         return [float(line.strip()) for line in f if line.strip()]
 
 
-if __name__ == "__main__":
+def main():
     scriptDir = os.path.dirname(os.path.abspath(__file__))
     csvPath = os.path.join(scriptDir, 'data', 'poly_coeff_newton.csv')
 
@@ -204,5 +204,7 @@ if __name__ == "__main__":
         print("MATCH - both algorithms found the same roots.")
     else:
         print("MISMATCH - the outputs differ.")
-        print(f"  Custom only: {[r for r in csvRoots if r not in realNumpyRoots]}")
-        print(f"  Numpy only : {[r for r in realNumpyRoots if r not in csvRoots]}")
+
+
+if __name__ == "__main__":
+    main()
