@@ -11,27 +11,27 @@
   (and (not (nan? v)) (not (infinite? v))))
 
 (define (horner-eval coeffs x)
-  (let loop ((acc (car coeffs)) (rest (cdr coeffs)))
+  (let loop ([acc (car coeffs)] [rest (cdr coeffs)])
     (if (null? rest)
         acc
         (loop (+ (* acc x) (car rest))
               (cdr rest)))))
 
 (define (horner-eval-with-deriv coeffs x)
-  (let loop ((res (car coeffs))
-             (der 0.0)
-             (rest (cdr coeffs)))
+  (let loop ([res (car coeffs)]
+             [der 0.0]
+             [rest (cdr coeffs)])
     (if (null? rest)
         (values res der)
-        (let* ((c (car rest))
-               (new-der (+ (* der x) res))
-               (new-res (+ (* res x) c)))
+        (let* ([c (car rest)]
+               [new-der (+ (* der x) res)]
+               [new-res (+ (* res x) c)])
           (loop new-res new-der (cdr rest))))))
 
 (define (derivative-coefficients coeffs)
-  (let loop ((rest coeffs)
-             (power (- (length coeffs) 1))
-             (acc '()))
+  (let loop ([rest coeffs]
+             [power (- (length coeffs) 1)]
+             [acc '()])
     (if (or (null? rest) (= power 0))
         (reverse acc)
         (loop (cdr rest)
@@ -39,14 +39,14 @@
               (cons (* (car rest) power) acc)))))
 
 (define (find-finite-edge coeffs start other)
-  (let ((f (horner-eval coeffs start)))
+  (let ([f (horner-eval coeffs start)])
     (if (finite? f)
         (values start f)
-        (let loop ((a start) (k 0))
+        (let loop ([a start] [k 0])
           (if (>= k 100)
               (values #f #f)
-              (let* ((a2 (/ (+ a other) 2.0))
-                     (f2 (horner-eval coeffs a2)))
+              (let* ([a2 (/ (+ a other) 2.0)]
+                     [f2 (horner-eval coeffs a2)])
                 (if (finite? f2)
                     (values a2 f2)
                     (loop a2 (+ k 1)))))))))
@@ -61,7 +61,7 @@
               (list left right f-left f-right))))))
 
 (define (newton-raphson coeffs x0 eps)
-  (let loop ((x x0) (k 0))
+  (let loop ([x x0] [k 0])
     (if (>= k 100)
         #f
         (let-values ([(fx dfx) (horner-eval-with-deriv coeffs x)])
@@ -69,17 +69,17 @@
             [(or (not (finite? fx)) (not (finite? dfx)) (= dfx 0)) #f]
             [(< (abs fx) eps) x]
             [else
-             (let ((xnew (- x (/ fx dfx))))
+             (let ([xnew (- x (/ fx dfx))])
                (cond
                  [(not (finite? xnew)) #f]
                  [(< (abs (- xnew x)) eps) xnew]
                  [else (loop xnew (+ k 1))]))])))))
 
 (define (bisection coeffs a b eps)
-  (let loop ((a a) (b b) (fa (horner-eval coeffs a)))
+  (let loop ([a a] [b b] [fa (horner-eval coeffs a)])
     (if (> (/ (- b a) 2.0) eps)
-        (let* ((mid (/ (+ a b) 2.0))
-               (fmid (horner-eval coeffs mid)))
+        (let* ([mid (/ (+ a b) 2.0)]
+               [fmid (horner-eval coeffs mid)])
           (cond
             [(= fmid 0) mid]
             [(< (* fa fmid) 0) (loop a mid fa)]
@@ -90,23 +90,23 @@
   (list (/ (- c1) c0)))
 
 (define (second-degree c0 c1 c2)
-  (let ((disc (- (* c1 c1) (* 4.0 c0 c2))))
+  (let ([disc (- (* c1 c1) (* 4.0 c0 c2))])
     (if (< disc 0)
         '()
-        (let ((sq (sqrt disc)))
+        (let ([sq (sqrt disc)])
           (list (/ (- (- c1) sq) (* 2.0 c0))
                 (/ (+ (- c1) sq) (* 2.0 c0)))))))
 
 (define (build-chain coeffs)
   (reverse
-   (let loop ((current coeffs) (acc (list coeffs)))
+   (let loop ([current coeffs] [acc (list coeffs)])
      (if (> (length current) 3)
-         (let ((d (derivative-coefficients current)))
+         (let ([d (derivative-coefficients current)])
            (loop d (cons d acc)))
          acc))))
 
 (define (roots-in-range roots a b)
-  (let loop ((rs roots) (acc '()))
+  (let loop ([rs roots] [acc '()])
     (cond
       [(null? rs) (reverse acc)]
       [(and (<= a (car rs)) (<= (car rs) b))
@@ -114,41 +114,41 @@
       [else (loop (cdr rs) acc)])))
 
 (define (refine-level poly roots a b eps)
-  (let* ((deriv-roots (roots-in-range roots a b))
-         (split-points (append (list a) deriv-roots (list b))))
-    (let loop ((pts split-points) (acc '()))
+  (let* ([deriv-roots (roots-in-range roots a b)]
+         [split-points (append (list a) deriv-roots (list b))])
+    (let loop ([pts split-points] [acc '()])
       (if (or (null? pts) (null? (cdr pts)))
           (reverse acc)
-          (let* ((lo (car pts))
-                 (hi (cadr pts))
-                 (br (safe-bracket poly lo hi)))
+          (let* ([lo (car pts)]
+                 [hi (cadr pts)]
+                 [br (safe-bracket poly lo hi)])
             (if (not br)
                 (loop (cdr pts) acc)
-                (let ((lo (first br)) (hi (second br))
-                      (fa (third br)) (fb (fourth br)))
+                (let ([lo (first br)] [hi (second br)]
+                      [fa (third br)] [fb (fourth br)])
                   (if (<= (* fa fb) 0)
-                      (let* ((x0 (/ (+ lo hi) 2.0))
-                             (root (or (newton-raphson poly x0 eps)
-                                       (bisection poly lo hi eps))))
+                      (let* ([x0 (/ (+ lo hi) 2.0)]
+                             [root (or (newton-raphson poly x0 eps)
+                                       (bisection poly lo hi eps))])
                         (if (and (finite? root) (<= a root) (<= root b))
                             (loop (cdr pts) (cons root acc))
                             (loop (cdr pts) acc)))
                       (loop (cdr pts) acc)))))))))
 
 (define (find-roots coeffs a b eps)
-  (let ((deg (- (length coeffs) 1)))
+  (let ([deg (- (length coeffs) 1)])
     (cond
       [(<= deg 0) '()]
       [(= deg 1) (first-degree (list-ref coeffs 0) (list-ref coeffs 1))]
       [(= deg 2) (second-degree (list-ref coeffs 0) (list-ref coeffs 1) (list-ref coeffs 2))]
       [else
-       (let* ((chain (build-chain coeffs))
-              (lowest (last chain))
-              (init-roots (second-degree (list-ref lowest 0)
+       (let* ([chain (build-chain coeffs)]
+              [lowest (last chain)]
+              [init-roots (second-degree (list-ref lowest 0)
                                          (list-ref lowest 1)
-                                         (list-ref lowest 2)))
-              (process-list (cdr (reverse chain))))
-         (let loop ((polys process-list) (roots init-roots))
+                                         (list-ref lowest 2))]
+              [process-list (cdr (reverse chain))])
+         (let loop ([polys process-list] [roots init-roots])
            (if (null? polys)
                roots
                (loop (cdr polys)
@@ -158,7 +158,7 @@
   (/ (round (* r 1000000.0)) 1000000.0))
 
 (define (map-outer-roots bounds)
-  (let loop ((ys bounds) (acc '()))
+  (let loop ([ys bounds] [acc '()])
     (cond
       [(null? ys) (reverse acc)]
       [(> (abs (car ys)) 1e-12)
@@ -166,27 +166,27 @@
       [else (loop (cdr ys) acc)])))
 
 (define (round-all roots)
-  (let loop ((rs roots) (acc '()))
+  (let loop ([rs roots] [acc '()])
     (if (null? rs)
         (reverse acc)
         (loop (cdr rs) (cons (round6 (car rs)) acc)))))
 
 (define (scan-page coeffs eps)
-  (let* ((reversed-coeffs (reverse coeffs))
-         (inner-roots (find-roots coeffs -1.0 1.0 eps))
-         (outer-bounds (find-roots reversed-coeffs -1.0 1.0 eps))
-         (outer-roots (map-outer-roots outer-bounds))
-         (all-roots (append inner-roots outer-roots)))
+  (let* ([reversed-coeffs (reverse coeffs)]
+         [inner-roots (find-roots coeffs -1.0 1.0 eps)]
+         [outer-bounds (find-roots reversed-coeffs -1.0 1.0 eps)]
+         [outer-roots (map-outer-roots outer-bounds)]
+         [all-roots (append inner-roots outer-roots)])
     (sort (round-all all-roots) <)))
 
 (define (load-coeffs path)
   (with-input-from-file path
     (lambda ()
-      (let loop ((acc '()))
-        (let ((line (read-line)))
+      (let loop ([acc '()])
+        (let ([line (read-line)])
           (if (eof-object? line)
               (reverse acc)
-              (let ((trimmed (string-trim line)))
+              (let ([trimmed (string-trim line)])
                 (if (string=? trimmed "")
                     (loop acc)
                     (loop (cons (exact->inexact (string->number trimmed)) acc))))))))))
