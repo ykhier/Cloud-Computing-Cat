@@ -5,7 +5,7 @@
          racket/math
          racket/runtime-path)
 
-(define-runtime-path csv-path "data/poly_coeff_newton.csv")
+
 
 (define (finite? v)
   (and (not (nan? v)) (not (infinite? v))))
@@ -190,6 +190,8 @@
                 (if (string=? trimmed "")
                     (loop acc)
                     (loop (cons (exact->inexact (string->number trimmed)) acc))))))))))
+
+(define-runtime-path csv-path "data/poly_coeff_newton.csv")
 
 (define (main)
   (printf "--- Custom Algorithm (CSV file): ---\n")
