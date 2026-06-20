@@ -8,14 +8,17 @@
 
 
 (define (finite? v)
-  (and (not (nan? v)) (not (infinite? v))))
+  (if (nan? v)
+      #f
+      (if (infinite? v)
+          #f
+          #t)))
 
 (define (horner-eval coeffs x)
   (let loop ([acc (car coeffs)] [rest (cdr coeffs)])
     (if (null? rest)
         acc
-        (loop (+ (* acc x) (car rest))
-              (cdr rest)))))
+        (loop (+ (* acc x) (car rest)) (cdr rest)))))
 
 (define (horner-eval-with-deriv coeffs x)
   (let loop ([res (car coeffs)]
